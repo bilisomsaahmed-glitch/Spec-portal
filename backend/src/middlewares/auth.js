@@ -1,0 +1,8 @@
+import jwt from 'jsonwebtoken';
+import { User, Event } from '../models/index.js';
+export async function auth(req,res,next){try{const token=req.headers.authorization?.replace(/^Bearer\s+/i,'');if(!token)return res.status(401).json({message:'Please sign in to continue.'});const payload=jwt.verify(token,process.env.JWT_SECRET);req.user=await User.findById(payload.id);if(!req.user||!req.user.active)return res.status(401).json({message:'This account is unavailable.'});next()}catch{return res.status(401).json({message:'Your session has expired. Please sign in again.'})}}
+export const allow=(...roles)=>(req,res,next)=>roles.includes(req.user.role)?next():res.status(403).json({message:'You do not have permission to do that.'});
+export const canManage=(req,res,next)=>{const privileged=['admin','executive'].includes(req.user.role);const leader=req.user.role==='division_leader'&&(!req.body.division||req.body.division===req.user.division);return privileged||leader?next():res.status(403).json({message:'You do not have permission to manage this content.'})};
+
+export const eventManager=async(req,res,next)=>{try{const event=await Event.findById(req.params.id);if(!event)return res.status(404).json({message:'Event not found.'});if(['admin','executive'].includes(req.user.role)||(req.user.role==='division_leader'&&req.user.division===event.division)){req.managedEvent=event;return next()}return res.status(403).json({message:'You do not manage this event.'})}catch(error){next(error)}};
+export const divisionAccess=division=>(req,res,next)=>{if(['admin','executive'].includes(req.user.role)||(req.user.role==='division_leader'&&req.user.division===division))return next();return res.status(403).json({message:'You do not have permission to manage this division.'})};

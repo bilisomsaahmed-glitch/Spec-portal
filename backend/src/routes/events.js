@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { getEvents, postEvents, patchEventsId, postEventsIdRegister, deleteEventsIdRegister } from '../controllers/eventsController.js';
+import { auth, allow, canManage, divisionAccess, eventManager } from '../middlewares/auth.js';
+const router = Router();
+router.get('/events',auth,getEvents);
+router.post('/events',auth,canManage,postEvents);
+router.patch('/events/:id',auth,eventManager,patchEventsId);
+router.post('/events/:id/register',auth,postEventsIdRegister);
+router.delete('/events/:id/register',auth,deleteEventsIdRegister);
+export default router;

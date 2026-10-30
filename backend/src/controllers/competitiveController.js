@@ -1,0 +1,10 @@
+import { User, Membership, Event, Announcement, Notification, Project, Resource, Contest, Training, Score } from '../models/index.js';
+import { wrap } from './authController.js';
+const divisions=['Development','Competitive Programming','Capacity Building'];
+const safe=u=>({id:u._id,name:u.name,email:u.email,role:u.role,division:u.division,studentId:u.studentId});
+export const getCompetitiveOverview = wrap(async(req,res)=>{const[resources,contests,scores]=await Promise.all([Resource.find({division:'Competitive Programming'}),Contest.find({division:'Competitive Programming'}).sort({date:1}),Score.find().sort({score:-1}).limit(20).populate('user','name division').populate('contest','title')]);res.json({resources,contests,scores})});
+export const getCompetitiveResources = wrap(async(req,res)=>res.json(await Resource.find({division:'Competitive Programming'})));
+export const postCompetitiveResources = wrap(async(req,res)=>res.status(201).json(await Resource.create({...req.body,division:'Competitive Programming',createdBy:req.user._id})));
+export const getCompetitiveContests = wrap(async(req,res)=>res.json(await Contest.find({division:'Competitive Programming'}).sort({date:1})));
+export const postCompetitiveContests = wrap(async(req,res)=>res.status(201).json(await Contest.create({...req.body,division:'Competitive Programming',createdBy:req.user._id})));
+export const postCompetitiveScores = wrap(async(req,res)=>{const{userId,contestId,score}=req.body;if(!userId||!contestId||!Number.isFinite(Number(score))||Number(score)<0)return res.status(400).json({message:'Choose a member and contest, then enter a valid score.'});res.status(201).json(await Score.create({user:userId,contest:contestId,score:Number(score)}))});

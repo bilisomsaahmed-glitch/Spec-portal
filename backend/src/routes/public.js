@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { getPublicHome, getAnnouncements, postAnnouncements, getNotifications, patchNotificationsIdRead, getReports, getSearch } from '../controllers/publicController.js';
+import { auth, allow, canManage, divisionAccess, eventManager } from '../middlewares/auth.js';
+const router = Router();
+router.get('/public/home',getPublicHome);
+router.get('/announcements',getAnnouncements);
+router.post('/announcements',auth,canManage,postAnnouncements);
+router.get('/notifications',auth,getNotifications);
+router.patch('/notifications/:id/read',auth,patchNotificationsIdRead);
+router.get('/reports',auth,allow('admin','executive'),getReports);
+router.get('/search',auth,getSearch);
+export default router;

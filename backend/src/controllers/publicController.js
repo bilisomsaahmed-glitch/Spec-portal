@@ -1,0 +1,11 @@
+import { User, Membership, Event, Announcement, Notification, Project, Resource, Contest, Training, Score } from '../models/index.js';
+import { wrap } from './authController.js';
+const divisions=['Development','Competitive Programming','Capacity Building'];
+const safe=u=>({id:u._id,name:u.name,email:u.email,role:u.role,division:u.division,studentId:u.studentId});
+export const getPublicHome = wrap(async(req,res)=>{const[events,announcements]=await Promise.all([Event.find({status:'published',date:{$gte:new Date()}}).sort({date:1}).limit(4).populate('createdBy','name'),Announcement.find().sort({createdAt:-1}).limit(4).populate('createdBy','name')]);res.json({events,announcements,divisions})});
+export const getAnnouncements = wrap(async(req,res)=>res.json(await Announcement.find().sort({createdAt:-1}).populate('createdBy','name')));
+export const postAnnouncements = wrap(async(req,res)=>{if(!req.body.title||!req.body.body)return res.status(400).json({message:'Title and message are required.'});res.status(201).json(await Announcement.create({...req.body,division:req.user.role==='division_leader'?req.user.division:(req.body.division||'All'),createdBy:req.user._id}))});
+export const getNotifications = wrap(async(req,res)=>res.json(await Notification.find({user:req.user._id}).sort({createdAt:-1}).limit(50)));
+export const patchNotificationsIdRead = wrap(async(req,res)=>res.json(await Notification.findOneAndUpdate({_id:req.params.id,user:req.user._id},{read:true},{new:true})));
+export const getReports = wrap(async(req,res)=>{const[roles,divisionsCount,eventCount,applications]=await Promise.all([User.aggregate([{$group:{_id:'$role',count:{$sum:1}}}]),User.aggregate([{$match:{role:'member'}},{$group:{_id:'$division',count:{$sum:1}}}]),Event.countDocuments(),Membership.aggregate([{$group:{_id:'$status',count:{$sum:1}}}])]);res.json({roles,divisions:divisionsCount,eventCount,applications})});
+export const getSearch = wrap(async(req,res)=>{const term=String(req.query.q||'').trim();if(!term)return res.json({events:[],announcements:[]});const re=new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i');const[events,announcements]=await Promise.all([Event.find({title:re,status:'published'}).limit(10),Announcement.find({$or:[{title:re},{body:re}]}).limit(10)]);res.json({events,announcements})});

@@ -1,0 +1,5 @@
+import { User, Membership, Event, Announcement, Notification, Project, Resource, Contest, Training, Score } from '../models/index.js';
+import { wrap } from './authController.js';
+const divisions=['Development','Competitive Programming','Capacity Building'];
+const safe=u=>({id:u._id,name:u.name,email:u.email,role:u.role,division:u.division,studentId:u.studentId});
+export const getDashboard = wrap(async(req,res)=>{const user=req.user,filter={status:'published',date:{$gte:new Date()}};const[events,announcements,memberships,myEvents,stats,notifications]=await Promise.all([Event.find(filter).sort({date:1}).limit(5),Announcement.find(user.division?{$or:[{division:'All'},{division:user.division}]}:{}).sort({createdAt:-1}).limit(4),Membership.find({user:user._id}).sort({createdAt:-1}),Event.find({registrations:user._id}).sort({date:1}),Promise.all([User.countDocuments({role:'member'}),Membership.countDocuments({status:'pending'}),Event.countDocuments(filter)]),Notification.find({user:user._id,read:false}).limit(5)]);res.json({user:safe(user),events,announcements,memberships,myEvents,stats:{members:stats[0],pending:stats[1],upcoming:stats[2]},notifications})});

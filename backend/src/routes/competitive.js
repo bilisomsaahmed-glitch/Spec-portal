@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { getCompetitiveOverview, getCompetitiveResources, postCompetitiveResources, getCompetitiveContests, postCompetitiveContests, postCompetitiveScores } from '../controllers/competitiveController.js';
+import { auth, allow, canManage, divisionAccess, eventManager } from '../middlewares/auth.js';
+const router = Router();
+router.get('/competitive/overview',auth,getCompetitiveOverview);
+router.get('/competitive/resources',auth,getCompetitiveResources);
+router.post('/competitive/resources',auth,divisionAccess('Competitive Programming'),postCompetitiveResources);
+router.get('/competitive/contests',auth,getCompetitiveContests);
+router.post('/competitive/contests',auth,divisionAccess('Competitive Programming'),postCompetitiveContests);
+router.post('/competitive/scores',auth,divisionAccess('Competitive Programming'),postCompetitiveScores);
+export default router;
